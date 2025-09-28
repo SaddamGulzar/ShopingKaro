@@ -39,9 +39,10 @@ jobs:
             echo "No previous instance running on port 8087"
           fi
 
-      # 6. Start app on port 8087 in background
+      # 6. Start app on port 8087 accessible externally
       - name: Start ShopingKaro
         run: |
           export PORT=8087
-          nohup npm run start > app.log 2>&1 &
-          echo "ShopingKaro started on port 8087"
+          export HOST=0.0.0.0
+          nohup node server.js > app.log 2>&1 &
+          echo "ShopingKaro started on port 8087 (0.0.0.0)"

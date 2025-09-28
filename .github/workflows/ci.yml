@@ -1,6 +1,6 @@
 name: ShopingKaro CI/CD
 
-# Trigger workflow automatically on push to main branch
+# Trigger workflow automatically on push or pull request to main
 on:
   push:
     branches:
@@ -8,7 +8,6 @@ on:
 
 jobs:
   ci-cd:
-    # Specify your self-hosted runner with tag
     runs-on: [self-hosted]
 
     steps:
@@ -16,7 +15,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Environment (Node.js, npm, PM2, MongoDB)
+      # 2️⃣ Setup Environment (Node.js, npm, PM2, MongoDB 6.0)
       - name: Setup Environment
         run: |
           echo "Checking Node.js..."
@@ -40,8 +39,9 @@ jobs:
 
           echo "Checking MongoDB..."
           if ! command -v mongod &> /dev/null; then
-            wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
-            echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+            # MongoDB 6.0 compatible with Ubuntu 24.04
+            wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+            echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
             sudo apt-get update
             sudo apt-get install -y mongodb-org
           fi
@@ -73,12 +73,11 @@ jobs:
           echo "Building application..."
           npm run build || echo "No build script defined, skipping"
 
-      # 4️⃣ Deploy application with PM2
+      # 4️⃣ Deploy application with PM2 on port 8087
       - name: Deploy Application
         run: |
           APP_NAME="ShopingKaro"
           PORT=8087
-
           export PORT=$PORT
 
           echo "Starting application..."

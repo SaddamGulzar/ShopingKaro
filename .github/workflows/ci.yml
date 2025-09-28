@@ -1,0 +1,88 @@
+name: Node.js CI/CD Full Automated
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci-cd:
+    runs-on: self-hosted
+
+    steps:
+      # Step 1: Checkout the repo
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Setup Environment (Node.js, npm, MongoDB, PM2)
+      - name: Setup Environment
+        run: |
+          echo "Checking Node.js..."
+          if ! command -v node &> /dev/null; then
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+          fi
+          echo "Node.js version: $(node -v)"
+
+          echo "Checking npm..."
+          if ! command -v npm &> /dev/null; then
+            sudo apt install -y npm
+          fi
+          echo "npm version: $(npm -v)"
+
+          echo "Checking PM2..."
+          if ! command -v pm2 &> /dev/null; then
+            sudo npm install -g pm2
+          fi
+          echo "PM2 version: $(pm2 -v)"
+
+          echo "Checking MongoDB..."
+          if ! command -v mongod &> /dev/null; then
+            wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
+            echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+            sudo apt-get update
+            sudo apt-get install -y mongodb-org
+          fi
+
+          # Ensure MongoDB data directory exists
+          MONGO_DATA_DIR="/var/lib/mongodb"
+          sudo mkdir -p $MONGO_DATA_DIR
+          sudo chown -R mongodb:mongodb $MONGO_DATA_DIR
+
+          # Start MongoDB service
+          sudo systemctl start mongod
+          sudo systemctl enable mongod
+          echo "MongoDB is running"
+
+      # Step 3: Clean old artifacts and install dependencies
+      - name: Clean & Install Dependencies
+        run: |
+          echo "Stopping old application..."
+          pm2 stop ShopingKaro || true
+          pm2 delete ShopingKaro || true
+
+          echo "Cleaning old node_modules and build..."
+          rm -rf node_modules
+          rm -rf dist || true
+
+          echo "Installing dependencies..."
+          npm install
+
+          echo "Build application..."
+          npm run build || echo "No build script defined, skipping"
+
+      # Step 4: Deploy application with PM2
+      - name: Deploy Application
+        run: |
+          APP_NAME="ShopingKaro"
+          PORT=8087
+
+          export PORT=$PORT
+
+          echo "Starting application..."
+          pm2 start npm --name $APP_NAME -- start
+          pm2 save
+
+      # Step 5: Run tests
+      - name: Run Tests
+        run: npm test

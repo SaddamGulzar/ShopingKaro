@@ -64,15 +64,11 @@ jobs:
           pm2 stop ShopingKaro || true
           pm2 delete ShopingKaro || true
 
-          echo "Cleaning old node_modules and build..."
+          echo "Cleaning old node_modules..."
           rm -rf node_modules
-          rm -rf dist || true
 
           echo "Installing dependencies..."
           npm install
-
-          echo "Building application..."
-          npm run build || echo "No build script defined, skipping"
 
       # 5️⃣ Deploy application with PM2 on port 8087
       - name: Deploy Application

@@ -10,54 +10,59 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      # 1️⃣ Checkout your code
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2️⃣ Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install Docker & Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io docker-compose
-
-      - name: Clean old containers and PM2 processes
+      # 3️⃣ Clean old Docker containers and PM2 processes
+      - name: Clean old containers and PM2
         run: |
           docker rm -f shoppingkaro-mongo || true
           pm2 stop all || true
           pm2 delete all || true
 
-      - name: Start MongoDB Docker container
+      # 4️⃣ Start MongoDB in Docker
+      - name: Start MongoDB container
         run: |
           docker run -d --name shoppingkaro-mongo -p 27017:27017 mongo:6.0
 
+      # 5️⃣ Create .env file automatically
       - name: Create .env file
         run: |
           echo "MONGO_DB_URI=mongodb://localhost:27017/shoppingkaro" > .env
           echo "PORT=8087" >> .env
 
+      # 6️⃣ Install npm dependencies
       - name: Install dependencies
         run: |
           npm install
 
-      - name: Build app (if build script exists)
+      # 7️⃣ Build the app (if build script exists)
+      - name: Build application
         run: |
           if npm run build; then echo "Build done"; else echo "No build script"; fi
 
-      - name: Run tests (if test script exists)
+      # 8️⃣ Run tests (if test script exists)
+      - name: Run tests
         run: |
           if npm test; then echo "Tests passed"; else echo "No tests or failed"; fi
 
-      - name: Start app via PM2
+      # 9️⃣ Start app via PM2
+      - name: Start Node app
         run: |
           export PORT=8087
           pm2 start index.js --name ShopingKaro --watch
           pm2 save
 
+      # 🔟 Verify app is running
       - name: Verify app status
         run: |
           pm2 status
-          sudo lsof -i -P -n | grep LISTEN | grep 8087
+          sudo lsof -i -P -n | grep LISTEN | grep 8087 || echo "App not listening yet"
           curl -f http://localhost:8087 || echo "App not reachable yet"

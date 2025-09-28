@@ -1,6 +1,5 @@
 name: ShopingKaro CI/CD
 
-# Trigger workflow automatically on push or pull request to main
 on:
   push:
     branches:
@@ -15,7 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Environment (Node.js, npm, PM2, MongoDB 6.0)
+      # 2️⃣ Setup Environment (Node.js, npm, PM2, MongoDB for Ubuntu 24.04)
       - name: Setup Environment
         run: |
           echo "Checking Node.js..."
@@ -39,9 +38,9 @@ jobs:
 
           echo "Checking MongoDB..."
           if ! command -v mongod &> /dev/null; then
-            # MongoDB 6.0 compatible with Ubuntu 24.04
+            echo "Installing MongoDB 6.0 for Ubuntu 24.04 (jammy repo)..."
             wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-            echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+            echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
             sudo apt-get update
             sudo apt-get install -y mongodb-org
           fi

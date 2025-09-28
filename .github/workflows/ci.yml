@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Environment (Node.js, npm, PM2, Docker)
+      # 2️⃣ Setup Environment
       - name: Setup Environment
         run: |
           echo "Checking Node.js..."
@@ -38,7 +38,6 @@ jobs:
 
           echo "Checking Docker..."
           if ! command -v docker &> /dev/null; then
-            echo "Docker is not installed. Installing Docker..."
             sudo apt-get update
             sudo apt-get install -y docker.io
             sudo systemctl enable docker
@@ -70,7 +69,7 @@ jobs:
           echo "Installing dependencies..."
           npm install
 
-      # 5️⃣ Deploy application with PM2 on port 8087
+      # 5️⃣ Deploy Application with PM2 on port 8087
       - name: Deploy Application
         run: |
           APP_NAME="ShopingKaro"
@@ -81,7 +80,14 @@ jobs:
           pm2 start npm --name $APP_NAME -- start
           pm2 save
 
-      # 6️⃣ Skip Tests (no tests defined yet)
+      # 6️⃣ Ensure firewall allows port 8087
+      - name: Open Firewall Port 8087
+        run: |
+          echo "Opening port 8087..."
+          sudo ufw allow 8087/tcp || true
+          sudo ufw reload || true
+
+      # 7️⃣ Skip Tests (no tests yet)
       - name: Run Tests
         run: |
           echo "No tests defined yet, skipping test step..."

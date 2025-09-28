@@ -3,14 +3,11 @@ name: ShopingKaro CI/CD
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - master
 
 jobs:
   ci-cd:
-    runs-on: [self-hosted, shopingkaro]
+    runs-on: [self-hosted]
 
     steps:
       # 1️⃣ Checkout the repo

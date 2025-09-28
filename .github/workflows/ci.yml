@@ -10,7 +10,7 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # 1. Checkout code
+      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -24,22 +24,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 4. Skip tests safely
+      # 4. Run tests safely
       - name: Run tests (optional)
         run: npm test || echo "No tests found or failed"
 
-      # 5. Stop old app on port 8087
+      # 5. Stop old app on port 8087 safely
       - name: Stop old instance
         run: |
-          OLD_PID=$(lsof -ti tcp:8087)
+          OLD_PID=$(lsof -ti tcp:8087 || true)
           if [ -n "$OLD_PID" ]; then
             echo "Stopping old instance on port 8087 (PID: $OLD_PID)"
-            kill -9 $OLD_PID
+            kill -9 $OLD_PID || true
           else
             echo "No previous instance running on port 8087"
           fi
 
-      # 6. Start app on port 8087
+      # 6. Start app on port 8087 in background
       - name: Start ShopingKaro
         run: |
           export PORT=8087

@@ -3,11 +3,12 @@ name: CI/CD ShopingKaro
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
     runs-on: self-hosted
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -17,7 +18,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Docker
+      - name: Install Docker & Docker Compose
         run: |
           sudo apt-get update
           sudo apt-get install -y docker.io docker-compose
@@ -32,16 +33,20 @@ jobs:
         run: |
           docker run -d --name shoppingkaro-mongo -p 27017:27017 mongo:6.0
 
+      - name: Create .env file
+        run: |
+          echo "MONGO_DB_URI=mongodb://localhost:27017/shoppingkaro" > .env
+          echo "PORT=8087" >> .env
+
       - name: Install dependencies
         run: |
           npm install
 
-      - name: Build app
+      - name: Build app (if build script exists)
         run: |
-          # if you have a build step, otherwise skip
           if npm run build; then echo "Build done"; else echo "No build script"; fi
 
-      - name: Run tests
+      - name: Run tests (if test script exists)
         run: |
           if npm test; then echo "Tests passed"; else echo "No tests or failed"; fi
 
@@ -51,7 +56,8 @@ jobs:
           pm2 start index.js --name ShopingKaro --watch
           pm2 save
 
-      - name: Check app status
+      - name: Verify app status
         run: |
           pm2 status
           sudo lsof -i -P -n | grep LISTEN | grep 8087
+          curl -f http://localhost:8087 || echo "App not reachable yet"

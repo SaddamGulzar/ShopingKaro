@@ -1,68 +1,37 @@
-name: CI/CD ShopingKaro
+name: ShopingKaro Self-Hosted CI
 
+# Trigger on push to main branch
 on:
   push:
     branches:
       - master
 
 jobs:
-  deploy:
+  build-and-run:
     runs-on: self-hosted
 
     steps:
-      # 1️⃣ Checkout your code
-      - name: Checkout repo
+      # 1. Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Node.js
-      - name: Set up Node.js
+      # 2. Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '18'
 
-      # 3️⃣ Clean old Docker containers and PM2 processes
-      - name: Clean old containers and PM2
-        run: |
-          docker rm -f shoppingkaro-mongo || true
-          pm2 stop all || true
-          pm2 delete all || true
-
-      # 4️⃣ Start MongoDB in Docker
-      - name: Start MongoDB container
-        run: |
-          docker run -d --name shoppingkaro-mongo -p 27017:27017 mongo:6.0
-
-      # 5️⃣ Create .env file automatically
-      - name: Create .env file
-        run: |
-          echo "MONGO_DB_URI=mongodb://localhost:27017/shoppingkaro" > .env
-          echo "PORT=8087" >> .env
-
-      # 6️⃣ Install npm dependencies
+      # 3. Install dependencies
       - name: Install dependencies
-        run: |
-          npm install
+        run: npm install
 
-      # 7️⃣ Build the app (if build script exists)
-      - name: Build application
-        run: |
-          if npm run build; then echo "Build done"; else echo "No build script"; fi
-
-      # 8️⃣ Run tests (if test script exists)
+      # 4. Run tests (optional)
       - name: Run tests
-        run: |
-          if npm test; then echo "Tests passed"; else echo "No tests or failed"; fi
+        run: npm test || echo "No tests found or failed"
 
-      # 9️⃣ Start app via PM2
-      - name: Start Node app
+      # 5. Start the app on port 8087
+      - name: Start ShopingKaro App
         run: |
           export PORT=8087
-          pm2 start index.js --name ShopingKaro --watch
-          pm2 save
-
-      # 🔟 Verify app is running
-      - name: Verify app status
-        run: |
-          pm2 status
-          sudo lsof -i -P -n | grep LISTEN | grep 8087 || echo "App not listening yet"
-          curl -f http://localhost:8087 || echo "App not reachable yet"
+          nohup npm run start > app.log 2>&1 &
+          echo "ShopingKaro started on port 8087"

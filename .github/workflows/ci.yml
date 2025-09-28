@@ -9,7 +9,7 @@ on:
 jobs:
   ci-cd:
     # Specify your self-hosted runner with tag
-    runs-on: [self-hosted, shopingkaro]
+    runs-on: [self-hosted]
 
     steps:
       # 1️⃣ Checkout the repo

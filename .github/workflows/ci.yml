@@ -1,20 +1,25 @@
-name: Node.js CI/CD Full Automated
+name: ShopingKaro CI/CD
 
+# Trigger workflow automatically on push to main branch
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
 jobs:
   ci-cd:
-    runs-on: self-hosted
+    # Specify your self-hosted runner with tag
+    runs-on: [self-hosted, shopingkaro]
 
     steps:
-      # Step 1: Checkout the repo
+      # 1️⃣ Checkout the repo
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Setup Environment (Node.js, npm, MongoDB, PM2)
+      # 2️⃣ Setup Environment (Node.js, npm, PM2, MongoDB)
       - name: Setup Environment
         run: |
           echo "Checking Node.js..."
@@ -54,7 +59,7 @@ jobs:
           sudo systemctl enable mongod
           echo "MongoDB is running"
 
-      # Step 3: Clean old artifacts and install dependencies
+      # 3️⃣ Clean old artifacts and install dependencies
       - name: Clean & Install Dependencies
         run: |
           echo "Stopping old application..."
@@ -68,10 +73,10 @@ jobs:
           echo "Installing dependencies..."
           npm install
 
-          echo "Build application..."
+          echo "Building application..."
           npm run build || echo "No build script defined, skipping"
 
-      # Step 4: Deploy application with PM2
+      # 4️⃣ Deploy application with PM2
       - name: Deploy Application
         run: |
           APP_NAME="ShopingKaro"
@@ -83,6 +88,6 @@ jobs:
           pm2 start npm --name $APP_NAME -- start
           pm2 save
 
-      # Step 5: Run tests
+      # 5️⃣ Run tests
       - name: Run Tests
         run: npm test
